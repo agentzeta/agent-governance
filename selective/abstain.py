@@ -126,8 +126,14 @@ def random_baseline_aurc(
     for _ in range(trials):
         rng.shuffle(shuffled)
         vals.append(aurc(shuffled, correct))
-    mean = sum(vals) / len(vals)
-    var = sum((v - mean) ** 2 for v in vals) / len(vals)
+    # If every shuffle gave the same AURC there is no spread, and the answer
+    # must be exactly zero. Computing it arithmetically is not safe: before
+    # Python 3.12, sum() over identical floats can leave a rounding residue
+    # (~1e-17), which a caller would then divide by.
+    if max(vals) == min(vals):
+        return vals[0], 0.0
+    mean = math.fsum(vals) / len(vals)
+    var = math.fsum((v - mean) ** 2 for v in vals) / len(vals)
     return mean, math.sqrt(var)
 
 
@@ -284,7 +290,9 @@ def assess(
     base = sum(1 for c in correct if not c) / len(correct)
     a = aurc(scores, correct)
     b_mean, b_sd = random_baseline_aurc(scores, correct, trials=trials, seed=seed)
-    z = None if b_sd == 0 else (b_mean - a) / b_sd
+    # A spread that is pure rounding noise is no spread: dividing by it would
+    # turn floating-point residue into a z-score.
+    z = None if b_sd <= 1e-12 * max(1.0, abs(b_mean)) else (b_mean - a) / b_sd
     beats = z is not None and z >= min_z
 
     hce = high_confidence_error_rate(scores, correct)

@@ -9,7 +9,7 @@ Pure Python standard library. No dependencies, no network, no model.
 
 ```bash
 git clone https://github.com/<you>/agent-governance && cd agent-governance
-python3 -I tests/test_permcheck_selective.py    # 116 checks
+python3 -I tests/test_permcheck_selective.py    # 117 checks
 python3 -I tests/test_superagent.py             # 117 checks
 python3 -I tests/test_guardcheck.py             # 59 checks
 python3 -I labs/lab_guardrails.py               # guardrail evaluation, computed live
@@ -357,6 +357,17 @@ with recall 1.0. Caught by a test asserting the degenerate case.
 Worth noting what the degenerate case was: "the filter is doing nothing," which
 is exactly the state a team is in on day one.
 
+**A z-score computed from floating-point noise, on older Pythons only.** For a
+model that emits one constant confidence, every shuffle gives the same AURC, so
+the baseline's spread should be exactly zero and no z-score should exist. On
+Python 3.12+ it is. On 3.10 and 3.11, summing fifty identical floats and
+dividing by fifty does not return the original number, so the spread came out
+as `2.8e-17` — and the code divided by it. Found by running the suite on every
+Python version the CI matrix targets rather than only the one at hand. Fixed in
+the code, not the test: identical values now return an exactly-zero spread,
+summation is compensated, and a spread that is pure rounding residue is treated
+as none. A regression check pins the exact zero; the old code fails it on 3.10.
+
 ## Layout
 
 ```
@@ -369,7 +380,7 @@ guardcheck/evaluate.py     false-allow/false-deny rates, trivial baselines,
                            operating-point sweep — content-agnostic
 labs/lab_governance.py     permissions, speculation, abstention, computed live
 labs/lab_guardrails.py     guardrail evaluation, computed live
-tests/                     292 checks
+tests/                     293 checks
 ```
 
 ## Licence

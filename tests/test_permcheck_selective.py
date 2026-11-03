@@ -255,6 +255,9 @@ def test_selective() -> None:
     ok(close(rep.base_error_rate, 0.4), "base error rate 0.4")
     ok(close(rep.baseline_sd, 0.0), "shuffling constant scores changes nothing")
     ok(rep.z is None, "no z when the baseline has no spread")
+    ok(rep.baseline_sd == 0.0,
+       "constant scores give exactly zero spread on every Python version "
+       "(before 3.12, float summation leaves a ~1e-17 residue)")
     ok(not rep.usable_for_abstention, "a constant score cannot support abstention")
     ok("do not rank correctness" in rep.note, "the reason given")
 
