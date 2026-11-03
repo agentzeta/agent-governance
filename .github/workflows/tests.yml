@@ -1,0 +1,22 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run checks
+        run: |
+          python3 -I tests/test_permcheck_selective.py
+          python3 -I tests/test_superagent.py
+          python3 -I tests/test_guardcheck.py
+      - name: Run labs
+        run: |
+          python3 -I labs/lab_governance.py > /dev/null
+          python3 -I labs/lab_guardrails.py > /dev/null
